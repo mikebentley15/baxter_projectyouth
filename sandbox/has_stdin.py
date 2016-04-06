@@ -1,26 +1,22 @@
 #!/usr/bin/env python
+'Tests out try_get_line() from the util module'
 
+# System includes
 import sys
 import time
-import select
 
-def tryGetLine(inStream):
-    'Returns a line if there is one, else an empty string'
-    line = ''
-    fd = inStream.fileno()
-    readyToRead, _, _ = select.select([fd], [], [], 0.01)
-    if fd in readyToRead:
-        line = inStream.readline()
-    return line[:-1]  # Remove the newline
+# Local includes
+import util
 
 def main():
-    isStillGoing = True
-    print('Type "quit<ENTER>" to quit')
-    while isStillGoing:
+    'Main entry point.  Tests out try_get_line() for exiting an infinite loop.'
+    is_still_going = True
+    print 'Type "quit<ENTER>" to quit'
+    while is_still_going:
         time.sleep(0.5)      # Simulate work to do
-        line = tryGetLine(sys.stdin)
+        line = util.try_get_line(sys.stdin)
         if line == 'quit':
-            isStillGoing = False
+            is_still_going = False
         elif line != '':
             print 'Unrecognized command: ' + line
 

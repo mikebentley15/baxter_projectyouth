@@ -10,7 +10,7 @@ joint positions can be used later for playback.
 import rospy
 
 # Local includes
-import util
+from baxter_projectyouth import util
 
 
 def main():

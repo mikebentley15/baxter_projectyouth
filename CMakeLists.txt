@@ -9,6 +9,13 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
 )
 
+catkin_python_setup()
+
+catkin_package(CATKIN_DEPENDS
+  baxter_interface
+  rospy
+)
+
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -165,6 +172,14 @@ include_directories(
 #   FILES_MATCHING PATTERN "*.h"
 #   PATTERN ".svn" EXCLUDE
 # )
+
+install(
+  DIRECTORY scripts/
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+  USE_SOURCE_PERMISSIONS
+)
+
+
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 # install(FILES

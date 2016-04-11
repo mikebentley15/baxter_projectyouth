@@ -5,6 +5,7 @@
 #
 from baxter_interface import CHECK_VERSION
 import Queue
+import baxter_dataflow
 import baxter_interface
 import re
 import rospy
@@ -133,3 +134,46 @@ def save_joint_angles(filename, angles):
         outfile.write(',\n    '.join(split))
         outfile.write('\n')
 
+def play_path(limb, path, timeout=15, threshold=0.06):
+    '''
+    Calls move_to_positions() for each element in the path array.
+
+    @param path - Array of positions dictionaries
+
+    See move_to_positions() for more information.
+    '''
+    for positions in path:
+        move_to_positions(limb, positions, timeout, threshold)
+
+
+def move_to_positions(limb, positions, timeout=15, threshold=0.06):
+    '''
+    Moves the limb to the desired positions.
+
+    @param limb - The baxter_interface.Limb object to move
+    @param positions - Dictionary of joint -> angle positions
+    @param timeout - How long to try moving before giving up in seconds
+    @param threshold - How close to positions is "good enough"
+
+    Note, to change how fast it goes, you can call
+
+    >>> limb.set_joint_position_speed(ratio)
+
+    where ratio is a number between 0 and 1 with 1 being pretty fast and 0 being stopped.
+    '''
+    diff = lambda joint, angle: abs(angle - limb.joint_angle(joint))
+    #threshold = baxter_interface.settings.JOINT_ANGLE_TOLERANCE
+    # We want a bigger threshold so that it doesn't wiggle at the end, but
+    # says "good enough" and goes to the next point
+    threshold = 0.06
+    timeout = 15.0 # seconds
+
+    # Otherwise, go there without the filter
+    limb.set_joint_positions(positions)
+    baxter_dataflow.wait_for(
+        lambda: (all(diff(j,a) < threshold for j, a in positions.iteritems())),
+        timeout=timeout,
+        rate=100,
+        raise_on_error=False,
+        body=lambda: limb.set_joint_positions(positions)
+        )

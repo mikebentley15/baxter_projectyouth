@@ -32,13 +32,13 @@ def try_get_line(in_stream):
         line = in_stream.readline()
     return line[:-1]  # Remove the newline
 
-def connect_to_baxter():
+def connect_to_baxter(nodename):
     '''
     Connects to baxter, initializes this process as a node, and returns the two
     Limb objects for accessing and controlling the two Baxter arms as
     (left_arm, right_arm).
     '''
-    rospy.init_node('my_node')
+    rospy.init_node(nodename)
     baxter_enabler = baxter_interface.RobotEnable(CHECK_VERSION)
     baxter_enabler.enable()
 
@@ -144,7 +144,6 @@ def play_path(limb, path, timeout=15, threshold=0.06):
     '''
     for positions in path:
         move_to_positions(limb, positions, timeout, threshold)
-
 
 def move_to_positions(limb, positions, timeout=15, threshold=0.06):
     '''

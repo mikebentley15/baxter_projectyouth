@@ -17,7 +17,7 @@ def main():
     'Main entry point.  Records joint angles on button press until CTRL-C.'
 
     # Connect to Baxter
-    left_arm, right_arm = util.connect_to_baxter()
+    left_arm, right_arm = util.connect_to_baxter('easy_recorder')
 
     left_arm_filename = 'left_saved_joints.py'
     right_arm_filename = 'right_saved_joints.py'

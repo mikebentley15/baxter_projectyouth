@@ -46,17 +46,16 @@ def main(arguments):
     which_arm = arguments[0]
 
     # Connect to Baxter
-    left_arm, right_arm = util.connect_to_baxter('easy_playback_' + which_arm)
+    util.connect_to_baxter('easy_playback_' + which_arm)
 
     sys.path.append(os.path.realpath(os.curdir))
     if which_arm == 'left':
-        arm = left_arm
         import left_saved_joints as saved_joints
     elif which_arm == 'right':
-        arm = right_arm
         import right_saved_joints as saved_joints
     else:
-        sys.stderr.write('Error: Not a valid first argument: ' + which_arm + '\n')
+        sys.stderr.write('Error: Not a valid first argument: ' + which_arm \
+                + '\n')
         print_usage()
         return 1
 
@@ -67,13 +66,18 @@ def main(arguments):
     print 'arms and store in a python file.  The playback will continue in a'
     print 'loop until you press CTRL-C.'
     print
-    print 'You have chosen to playback the {0} arm from {0}_saved_joints.py.'.format(which_arm)
+    print 'You have chosen to playback the ' + \
+            '{0} arm from {0}_saved_joints.py.'.format(which_arm)
     print
     print 'When you are finished, press <CTRL>-C to quit'
     print
 
     while not rospy.is_shutdown():
-        util.play_path(arm, saved_joints.data)
+        for positions in saved_joints.path:
+            if which_arm == 'left':
+                util.move_left_arm_to_positions(positions)
+            elif which_arm == 'right':
+                util.move_right_arm_to_positions(positions)
 
     return 0
 

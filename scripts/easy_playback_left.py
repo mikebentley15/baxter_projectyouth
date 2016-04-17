@@ -13,11 +13,11 @@ import sys
 # Local includes
 from baxter_projectyouth import util
 
-def main(arguments):
+def main():
     'Main entry point.  Plays recorded joint angles in a loop until CTRL-C.'
 
     # Connect to Baxter
-    left_arm, _ = util.connect_to_baxter('easy_playback_left')
+    util.connect_to_baxter('easy_playback_left')
 
     sys.path.append(os.path.realpath(os.curdir))
     import left_saved_joints
@@ -35,9 +35,10 @@ def main(arguments):
     print
 
     while not rospy.is_shutdown():
-        util.play_path(left_arm, left_saved_joints.data)
+        for positions in left_saved_joints.path:
+            util.move_left_arm_to_positions(positions)
 
 
 # This calls the main() function if this script is called instead of imported
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main()

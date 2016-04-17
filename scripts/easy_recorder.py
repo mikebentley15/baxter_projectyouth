@@ -17,7 +17,7 @@ def main():
     'Main entry point.  Records joint angles on button press until CTRL-C.'
 
     # Connect to Baxter
-    left_arm, right_arm = util.connect_to_baxter('easy_recorder')
+    util.connect_to_baxter('easy_recorder')
 
     left_arm_filename = 'left_saved_joints.py'
     right_arm_filename = 'right_saved_joints.py'
@@ -47,18 +47,17 @@ def main():
 
         # See which arm to query and to which file to add
         if which_arm == 'left':
-            current_arm = left_arm
+            joint_names = util.left_arm_joint_names()
+            joint_angles = util.left_arm_joint_angles()
             current_filename = left_arm_filename
         elif which_arm == 'right':
-            current_arm = right_arm
+            joint_names = util.right_arm_joint_names()
+            joint_angles = util.right_arm_joint_angles()
             current_filename = right_arm_filename
-
-        # Ask what the current joint angles are
-        joint_angles = current_arm.joint_angles()
 
         # Save the joint angles to file
         print 'Saving ' + which_arm + ' joint angles'
-        util.save_joint_angles(current_filename, joint_angles)
+        util.save_joint_angles(current_filename, joint_names, joint_angles)
 
 
 # This calls the main() function if this script is called instead of imported

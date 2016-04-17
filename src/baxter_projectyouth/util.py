@@ -62,6 +62,9 @@ def connect_to_baxter(nodename):
     _left_arm = baxter_interface.Limb('left')
     _right_arm = baxter_interface.Limb('right')
 
+def is_baxter_running():
+    return not rospy.is_shutdown()
+
 def wait_for_button_press():
     '''
     Waits for a button press signal or a ROS shutdown signal.  It will return

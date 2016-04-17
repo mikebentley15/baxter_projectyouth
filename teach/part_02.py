@@ -2,6 +2,9 @@ from baxter_projectyouth import util
 
 util.connect_to_baxter('baxter_learning_node_02')
 
+# Maybe play the drum here, have it be painful...
+
+
 # Baxter, put your arm straight out
 # TODO Find the actual joint to move.
 util.move_left_arm_joint('left_e0', 0.0)

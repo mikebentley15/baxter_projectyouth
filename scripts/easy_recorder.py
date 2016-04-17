@@ -37,7 +37,7 @@ def main():
     print 'When you are finished, press <CTRL>-C to quit'
     print
 
-    while not rospy.is_shutdown():
+    while util.is_baxter_running():
         # Read button presses and see if we should record
         try:
             which_arm = util.wait_for_button_press()

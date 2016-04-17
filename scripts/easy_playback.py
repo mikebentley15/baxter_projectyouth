@@ -7,7 +7,6 @@ recorded joint positions are from a python-style file in an array called data.
 
 # System includes
 import os
-import rospy
 import sys
 
 # Local includes
@@ -72,7 +71,7 @@ def main(arguments):
     print 'When you are finished, press <CTRL>-C to quit'
     print
 
-    while not rospy.is_shutdown():
+    while util.is_baxter_running():
         for positions in saved_joints.path:
             if which_arm == 'left':
                 util.move_left_arm_to_positions(positions)

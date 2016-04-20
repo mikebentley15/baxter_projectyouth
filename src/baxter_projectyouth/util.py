@@ -86,7 +86,7 @@ def save_joint_angles(filename, names, angles):
     '''
     Saves the angles dictionary to filename in python notation
 
-    Will save it into an array of dictionaries called data.
+    Will save it into a list of lists called path.
     For example
 
     save_joint_angles('out.py', ['a', 'b'], [1, 2])
@@ -109,7 +109,7 @@ def save_joint_angles(filename, names, angles):
     try:
         with open(filename, 'r') as infile:
             for line in infile:
-                if re.match('data =', line):
+                if re.match('path =', line):
                     is_path_defined = True
                 if re.match('joint_names =', line):
                     is_joint_names_defined = True
@@ -118,15 +118,15 @@ def save_joint_angles(filename, names, angles):
 
     with open(filename, 'a') as outfile:
         if not is_path_defined:
-            outfile.write('data = []\n')
+            outfile.write('path = []\n')
         if not is_joint_names_defined:
-            outfile.write('joint_names = [\n    ')
-            outfile.write(',\n    '.join(names))
-            outfile.write('    ]\n')
+            outfile.write('joint_names = [\n    "')
+            outfile.write('",\n    "'.join(names))
+            outfile.write('"\n    ]\n')
         outfile.write('\n')
         outfile.write('positions = [\n    ')
         outfile.write(',\n    '.join([str(x) for x in angles]))
-        outfile.write('    ]\n')
+        outfile.write('\n    ]\n')
         outfile.write('path.append(positions)\n')
 
 def set_left_arm_speed(ratio):
@@ -216,7 +216,7 @@ def move_left_arm_to_positions(positions):
                       names)
     '''
     assert _left_arm is not None, 'You need to call connect_to_baxter() first'
-    positions_dictionary = dict(zip(_left_arm.joint_names()), positions)
+    positions_dictionary = dict(zip(_left_arm.joint_names(), positions))
     _move_to_positions(_left_arm, positions_dictionary)
 
 def move_right_arm_to_positions(positions):
@@ -228,7 +228,7 @@ def move_right_arm_to_positions(positions):
                       names)
     '''
     assert _right_arm is not None, 'You need to call connect_to_baxter() first'
-    positions_dictionary = dict(zip(_right_arm.joint_names()), positions)
+    positions_dictionary = dict(zip(_right_arm.joint_names(), positions))
     _move_to_positions(_right_arm, positions_dictionary)
 
 ## Private functions

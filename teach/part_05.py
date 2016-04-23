@@ -1,6 +1,6 @@
 from baxter_projectyouth import util
 
-util.connect_to_baxter('baxter_learning_node_02')
+util.connect_to_baxter('baxter_learning_node_05')
 
 # With teaching Baxter to play the drums, we want an easy way to play the drums
 # at a certain speed.  Let's make a FUNCTION!

@@ -1,6 +1,6 @@
 from baxter_projectyouth import util
 
-util.connect_to_baxter('baxter_learning_node_02')
+util.connect_to_baxter('baxter_learning_node_06')
 
 # We need to teach the other arm to play the triangle.  Let's do the same thing
 # we did here!

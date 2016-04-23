@@ -7,9 +7,11 @@ from baxter_interface import CHECK_VERSION
 import Queue
 import baxter_dataflow
 import baxter_interface
+import math
 import re
 import rospy
 import select
+import time
 
 
 #
@@ -26,16 +28,6 @@ _left_arm = None
 _left_joints = None
 _right_arm = None
 _right_joints = None
-
-def try_get_line(in_stream):
-    'Returns a line if there is one, else an empty string'
-    line = ''
-    file_number = in_stream.fileno()
-    timeout = 0.01 # seconds
-    ready_to_read, _, _ = select.select([file_number], [], [], timeout)
-    if file_number in ready_to_read:
-        line = in_stream.readline()
-    return line[:-1]  # Remove the newline
 
 def connect_to_baxter(nodename):
     '''
@@ -65,6 +57,108 @@ def connect_to_baxter(nodename):
 def is_baxter_running():
     return not rospy.is_shutdown()
 
+def set_left_arm_speed(ratio):
+    '''
+    ratio is a number between 0 and 1.  0 means stop, 1 means maximum speed,
+    0.5 means half speed.
+    '''
+    assert _left_arm is not None, 'You need to call connect_to_baxter() first'
+    _left_arm.set_joint_position_speed(ratio)
+
+def set_right_arm_speed(ratio):
+    '''
+    ratio is a number between 0 and 1.  0 means stop, 1 means maximum speed,
+    0.5 means half speed
+    '''
+    assert _right_arm is not None, 'You need to call connect_to_baxter() first'
+    _right_arm.set_joint_position_speed(ratio)
+
+def left_arm_joint_angles():
+    '''
+    Returns a list of the joint angles in the same order as
+    left_arm_joint_names() in degrees
+    '''
+    assert _left_arm is not None, 'You need to call connect_to_baxter() first'
+    return _arm_joint_angles(_left_arm)
+
+def right_arm_joint_angles():
+    '''
+    Returns a list of the joint angles in the same order as
+    right_arm_joint_names()
+    '''
+    assert _right_arm is not None, 'You need to call connect_to_baxter() first'
+    return _arm_joint_angles(_right_arm)
+
+def left_arm_joint_names():
+    '''
+    Returns a list of the joint names starting from the shoulder to the wrist
+    of the left Baxter arm
+    '''
+    assert _left_arm is not None, 'You need to call connect_to_baxter() first'
+    return _left_arm.joint_names()
+
+def right_arm_joint_names():
+    '''
+    Returns a list of the joint names starting from the shoulder to the wrist
+    of the right Baxter arm
+    '''
+    assert _right_arm is not None, 'You need to call connect_to_baxter() first'
+    return _right_arm.joint_names()
+
+def move_left_arm_joint(joint, angle):
+    '''
+    Move one joint from Baxter's left arm.
+
+    @param joint: the name of the joint to move
+    @param angle: The angle to move it to in degrees
+    '''
+    assert _left_arm is not None, 'You need to call connect_to_baxter() first'
+    _move_to_positions(_left_arm, {joint: angle})
+
+def move_right_arm_joint(joint, angle):
+    '''
+    Move one joint from Baxter's left arm.
+
+    @param joint: the name of the joint to move
+    @param angle: The angle to move it to
+    '''
+    assert _right_arm is not None, 'You need to call connect_to_baxter() first'
+    _move_to_positions(_right_arm, {joint: angle})
+
+def move_left_arm_to_positions(positions):
+    '''
+    Move Baxter's left arm to the given positions.
+
+    @param positions: A list of joint angles for the joints starting at the
+                      shoulder and going to the wrist (same order of joint
+                      names)
+    '''
+    assert _left_arm is not None, 'You need to call connect_to_baxter() first'
+    positions_dictionary = dict(zip(_left_arm.joint_names(), positions))
+    _move_to_positions(_left_arm, positions_dictionary)
+
+def move_right_arm_to_positions(positions):
+    '''
+    Move Baxter's right arm to the given positions.
+
+    @param positions: A list of joint angles for the joints starting at the
+                      shoulder and going to the wrist (same order of joint
+                      names)
+    '''
+    assert _right_arm is not None, 'You need to call connect_to_baxter() first'
+    positions_dictionary = dict(zip(_right_arm.joint_names(), positions))
+    _move_to_positions(_right_arm, positions_dictionary)
+
+def try_get_line(in_stream):
+    'Returns a line if there is one, else an empty string'
+    line = ''
+    file_number = in_stream.fileno()
+    timeout = 0.01 # seconds
+    ready_to_read, _, _ = select.select([file_number], [], [], timeout)
+    if file_number in ready_to_read:
+        line = in_stream.readline()
+    return line[:-1]  # Remove the newline
+
 def wait_for_button_press():
     '''
     Waits for a button press signal or a ROS shutdown signal.  It will return
@@ -82,7 +176,7 @@ def wait_for_button_press():
         raise rospy.ROSException()
     return which_button
 
-def save_joint_angles(filename, names, angles):
+def save_joint_angles(filename, names, angles, digits=1):
     '''
     Saves the angles dictionary to filename in python notation
 
@@ -125,113 +219,76 @@ def save_joint_angles(filename, names, angles):
             outfile.write('"\n    ]\n')
         outfile.write('\n')
         outfile.write('positions = [\n    ')
-        outfile.write(',\n    '.join([str(x) for x in angles]))
+        format_str = '{0:' + str(digits+5) + '.0' + str(digits) + 'f}'
+        outfile.write(',\n    '.join([format_str.format(x) for x in angles]))
         outfile.write('\n    ]\n')
         outfile.write('path.append(positions)\n')
 
-def set_left_arm_speed(ratio):
-    '''
-    ratio is a number between 0 and 1.  0 means stop, 1 means maximum speed,
-    0.5 means half speed.
-    '''
-    assert _left_arm is not None, 'You need to call connect_to_baxter() first'
-    _left_arm.set_joint_position_speed(ratio)
+def register_note_right_arm(note, above_position, down_position):
+    _register_note('right', note, above_position, down_position)
 
-def set_right_arm_speed(ratio):
-    '''
-    ratio is a number between 0 and 1.  0 means stop, 1 means maximum speed,
-    0.5 means half speed
-    '''
-    assert _right_arm is not None, 'You need to call connect_to_baxter() first'
-    _right_arm.set_joint_position_speed(ratio)
+def register_note_left_arm(note, above_position, down_position):
+    _register_note('left', note, above_position, down_position)
 
-def left_arm_joint_angles():
-    '''
-    Returns a list of the joint angles in the same order as
-    left_arm_joint_names()
-    '''
-    assert _left_arm is not None, 'You need to call connect_to_baxter() first'
-    positions_dict = _left_arm.joint_angles()
-    angles = []
-    joint_names = left_arm_joint_names()
-    for joint in joint_names:
-        angles.append(positions_dict[joint])
-    return angles
+def play_notes_right_arm(notes):
+    _play_notes('right', notes)
 
-def right_arm_joint_angles():
-    '''
-    Returns a list of the joint angles in the same order as
-    right_arm_joint_names()
-    '''
-    assert _right_arm is not None, 'You need to call connect_to_baxter() first'
-    positions_dict = _right_arm.joint_angles()
-    angles = []
-    joint_names = right_arm_joint_names()
-    for joint in joint_names:
-        angles.append(positions_dict[joint])
-    return angles
-
-def left_arm_joint_names():
-    '''
-    Returns a list of the joint names starting from the shoulder to the wrist
-    of the left Baxter arm
-    '''
-    assert _left_arm is not None, 'You need to call connect_to_baxter() first'
-    return _left_arm.joint_names()
-
-def right_arm_joint_names():
-    '''
-    Returns a list of the joint names starting from the shoulder to the wrist
-    of the right Baxter arm
-    '''
-    assert _right_arm is not None, 'You need to call connect_to_baxter() first'
-    return _right_arm.joint_names()
-
-def move_left_arm_joint(joint, angle):
-    '''
-    Move one joint from Baxter's left arm.
-
-    @param joint: the name of the joint to move
-    @param angle: The angle to move it to
-    '''
-    assert _left_arm is not None, 'You need to call connect_to_baxter() first'
-    _move_to_positions(_left_arm, {joint: angle})
-
-def move_right_arm_joint(joint, angle):
-    '''
-    Move one joint from Baxter's left arm.
-
-    @param joint: the name of the joint to move
-    @param angle: The angle to move it to
-    '''
-    assert _right_arm is not None, 'You need to call connect_to_baxter() first'
-    _move_to_positions(_right_arm, {joint: angle})
-
-def move_left_arm_to_positions(positions):
-    '''
-    Move Baxter's left arm to the given positions.
-
-    @param positions: A list of joint angles for the joints starting at the
-                      shoulder and going to the wrist (same order of joint
-                      names)
-    '''
-    assert _left_arm is not None, 'You need to call connect_to_baxter() first'
-    positions_dictionary = dict(zip(_left_arm.joint_names(), positions))
-    _move_to_positions(_left_arm, positions_dictionary)
-
-def move_right_arm_to_positions(positions):
-    '''
-    Move Baxter's right arm to the given positions.
-
-    @param positions: A list of joint angles for the joints starting at the
-                      shoulder and going to the wrist (same order of joint
-                      names)
-    '''
-    assert _right_arm is not None, 'You need to call connect_to_baxter() first'
-    positions_dictionary = dict(zip(_right_arm.joint_names(), positions))
-    _move_to_positions(_right_arm, positions_dictionary)
+def play_notes_left_arm(notes):
+    _play_notes('left', notes)
 
 ## Private functions
+
+def _rad_to_deg(angle):
+    'Convert radians to degrees'
+    return angle * 180 / math.pi
+
+def _deg_to_rad(angle):
+    'Convert radians to degrees'
+    return angle * math.pi / 180
+
+def _arm_joint_angles(arm):
+    '''
+    Returns a list of the joint angles in the same order as
+    arm.joint_names() in degrees
+    '''
+    positions_dict = arm.joint_angles()
+    joint_names = arm.joint_names()
+    angles = [_rad_to_deg(positions_dict[joint]) for joint in joint_names]
+    return angles
+
+_left_note_above_positions = {}
+_left_note_down_positions = {}
+_right_note_above_positions = {}
+_right_note_down_positions = {}
+def _register_note(arm, note, above_position, down_position):
+    if arm == 'left':
+        above_dict = _left_note_above_positions
+        down_dict = _left_note_down_positions
+    else:
+        above_dict = _right_note_above_positions
+        down_dict = _right_note_down_positions
+    above_dict[note] = above_position
+    down_dict[note] = down_position
+
+def _play_notes(arm, notes):
+    if arm == 'left':
+        above_dict = _left_note_above_positions
+        down_dict = _left_note_down_positions
+        mover = move_left_arm_to_positions
+    else:
+        above_dict = _right_note_above_positions
+        down_dict = _right_note_down_positions
+        mover = move_right_arm_to_positions
+    for note in notes:
+        if note == '-':
+            time.sleep(0.5)
+            continue
+        mover(above_dict[note])
+        time.sleep(0.1)
+        mover(down_dict[note])
+        time.sleep(0.1)
+        mover(above_dict[note])
+        
 
 def _store_left_button_press(state):
     'Callback for left button press.  Stores _L_BUTTON into _button_presses.'
@@ -262,7 +319,7 @@ def _move_to_positions(limb, pos_dict):
     Moves the limb to the desired positions.
 
     @param limb - The baxter_interface.Limb object to move
-    @param pos_dict - Dictionary of joint -> angle positions
+    @param pos_dict - Dictionary of joint -> angle positions in degrees
 
     Note, to change how fast it goes, you can call
 
@@ -271,14 +328,26 @@ def _move_to_positions(limb, pos_dict):
     where ratio is a number between 0 and 1 with 1 being pretty fast and 0
     being stopped.
     '''
+    # Convert to radians first thing
+    for key in pos_dict:
+        pos_dict[key] = _deg_to_rad(pos_dict[key])
+
+    cmd = limb.joint_angles()
+    def filtered_cmd():
+        # First Order Filter - 0.2 Hz Cutoff
+        for joint, value in pos_dict.iteritems():
+            cmd[joint] = 0.07 * value + 0.93 * cmd[joint]
+        return cmd
+
     diff = lambda joint, angle: abs(angle - limb.joint_angle(joint))
     #threshold = baxter_interface.settings.JOINT_ANGLE_TOLERANCE
     # We want a bigger threshold so that it doesn't wiggle at the end, but
     # says "good enough" and goes to the next point
-    threshold = 0.06
+    threshold = 0.02
     timeout = 15.0 # seconds
 
     # Otherwise, go there without the filter
+    #limb.set_joint_positions(filtered_cmd())
     limb.set_joint_positions(pos_dict)
     baxter_dataflow.wait_for(
         lambda: (all(diff(j, a) < threshold for j, a in pos_dict.iteritems())),

@@ -1,6 +1,6 @@
 from baxter_projectyouth import util
 
-util.connect_to_baxter('baxter_learning_node_02')
+util.connect_to_baxter('baxter_learning_node_04')
 
 # We want to now teach Baxter to play the drum with his left hand
 # TODO: Record placements of his hand and copy and paste from that file

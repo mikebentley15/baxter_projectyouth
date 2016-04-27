@@ -23,12 +23,12 @@ left_joint_names = [
 
 left_positions = {}
 left_positions['start'] = [
-     -45.8,
-      -1.7,
-      -2.3,
-      87.1,
-    -174.2,
-       6.3,
+     -45.0,
+       0.0,
+       0.0,
+      90.0,
+       0.0,
+       0.0,
     -174.8
     ]
 left_positions['wave'] = [
@@ -38,7 +38,7 @@ left_positions['wave'] = [
      140.9,
      -91.1,
        0.0,
-    -111.2
+       0.0
     ]
 left_positions['zero'] = [
        0.0,
@@ -56,9 +56,9 @@ right_positions['start'] = [
       -8.6,
        0.0,
      102.0,
-    -174.2,
-       7.4,
-     175.3
+       0.0,
+       0.0,
+       0.0
     ]
 right_positions['zero'] = [
        0.0,
